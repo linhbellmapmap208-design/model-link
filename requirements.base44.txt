@@ -1,0 +1,9 @@
+-r "requirements 2.txt"
+transkun==2.0.1
+torch==2.5.1+cpu
+torchaudio==2.5.1+cpu
+numpy==1.26.4
+setuptools==75.8.0
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20

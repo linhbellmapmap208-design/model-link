@@ -1,0 +1,33 @@
+services:
+  web:
+    image: python:3.11-slim
+    restart: on-failure
+    working_dir: /workspace
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - python_env:/opt/venv
+      - pip_cache:/root/.cache/pip
+    environment:
+      BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX}
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "2"
+      WATCHFILES_FORCE_POLLING: "true"
+    command:
+      - sh
+      - -ec
+      - |
+        apt-get update && apt-get install -y --no-install-recommends ffmpeg sox libsndfile1 libgomp1
+        test -x /opt/venv/bin/python || python -m venv /opt/venv
+        /opt/venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.base44.txt -c requirements.base44.lock.txt
+        exec /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload --reload-dir /workspace/app
+    healthcheck:
+      test: ["CMD", "/opt/venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health', timeout=5)"]
+      interval: 30s
+      timeout: 8s
+      start_period: 300s
+      retries: 3
+volumes:
+  python_env:
+  pip_cache:

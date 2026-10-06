@@ -4,37 +4,59 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TransKun · Piano to MIDI</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c111b;color:#e8edf5}*{box-sizing:border-box}body{margin:0;padding:48px 20px}main{max-width:780px;margin:auto}.tag{color:#65d8b0;font-size:13px;letter-spacing:.12em}h1{font-size:clamp(32px,6vw,52px);letter-spacing:-.04em;margin:18px 0}p{color:#aebbd0;line-height:1.65}section{background:#151e2d;border:1px solid #2c3a50;border-radius:18px;padding:24px;margin-top:24px}h2{font-size:18px;margin:0 0 16px}.row{display:flex;gap:10px}input{flex:1;min-width:0;background:#0c111b;color:#d8e7ff;border:1px solid #3d4d64;border-radius:8px;padding:13px;font-family:monospace}button,a.button{border:0;border-radius:8px;padding:13px 18px;background:#65d8b0;color:#0c111b;font-weight:700;cursor:pointer;text-decoration:none}code,pre{font-family:ui-monospace,monospace}pre{background:#0c111b;padding:16px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.7}.note{font-size:13px}.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}a{color:#8cc9ff}#message{min-height:24px;color:#65d8b0;font-size:14px;margin:10px 0 0}@media(max-width:520px){body{padding:28px 16px}section{padding:18px}.row{flex-direction:column}button{width:100%}}
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c111b;color:#e8edf5}*{box-sizing:border-box}body{margin:0;padding:48px 20px}main{max-width:780px;margin:auto}.tag{color:#65d8b0;font-size:13px;letter-spacing:.12em}h1{font-size:clamp(32px,6vw,52px);letter-spacing:-.04em;margin:18px 0}p{color:#aebbd0;line-height:1.65}section{background:#151e2d;border:1px solid #2c3a50;border-radius:18px;padding:24px;margin-top:24px}h2{font-size:18px;margin:0 0 16px}.row{display:flex;gap:10px}input[type=text]{flex:1;min-width:0;background:#0c111b;color:#d8e7ff;border:1px solid #3d4d64;border-radius:8px;padding:13px;font-family:monospace}button,a.button{border:0;border-radius:8px;padding:13px 18px;background:#65d8b0;color:#0c111b;font-weight:700;cursor:pointer;text-decoration:none}button:disabled{opacity:.5;cursor:wait}code,pre{font-family:ui-monospace,monospace}pre{background:#0c111b;padding:16px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.7}.note{font-size:13px}.links{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}a{color:#8cc9ff}#message{min-height:24px;color:#65d8b0;font-size:14px;margin:10px 0 0}.drop{border:2px dashed #3d4d64;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s}.drop:hover,.drop.drag{border-color:#65d8b0}.drop p{margin:8px 0}.file-name{color:#65d8b0;font-size:14px;margin:8px 0}#status{min-height:24px;font-size:14px;margin:12px 0}#status.processing{color:#f0c060}#status.error{color:#f08080}#status.done{color:#65d8b0}.download-btn{display:inline-block;margin-top:12px}.spinner{display:inline-block;width:16px;height:16px;border:2px solid #3d4d64;border-top-color:#65d8b0;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:520px){body{padding:28px 16px}section{padding:18px}.row{flex-direction:column}button{width:100%}}
 </style>
 </head>
 <body><main>
 <div class="tag">PIANO TRANSCRIPTION · CPU</div>
 <h1>TransKun đang chạy.</h1>
-<p>Chuyển âm thanh piano thành MIDI bằng mô hình TransKun. Dịch vụ đã nạp model trên CPU và sẵn sàng nhận yêu cầu từ bot.</p>
-<section><h2>Link dịch vụ cho bot</h2>
-<div class="row"><input id="service-url" aria-label="Link dịch vụ" readonly value="__PUBLIC_URL__"><button id="copy" type="button">Sao chép link</button></div>
+<p>Tải file âm thanh piano lên, model TransKun sẽ chuyển thành MIDI. Xử lý trên CPU nên có thể mất vài phút.</p>
+<section>
+<h2>Tải file lên</h2>
+<div class="drop" id="drop">
+<p>📁 Kéo th file vào đây hoặc bấm để chọn</p>
+<p class="note">WAV · MP3 · FLAC · OGG · M4A — tối đa 10 MB / 30 giây</p>
+<input type="file" id="file-input" accept=".wav,.mp3,.flac,.ogg,.m4a" hidden>
+</div>
+<p class="file-name" id="file-name"></p>
+<button id="convert" type="button" disabled>Chuyển thành MIDI</button>
+<div id="status"></div>
+<a id="download" class="button download-btn" style="display:none" download="transcription.mid">⬇ Tải MIDI về</a>
+</section>
+<section><h2>Link dịch vụ</h2>
+<div class="row"><input type="text" id="service-url" aria-label="Link dịch vụ" readonly value="__PUBLIC_URL__"><button id="copy" type="button">Sao chép link</button></div>
 <p id="message" role="status" aria-live="polite"></p>
 <div class="links"><a href="/docs">Tài liệu & thử API ↗</a><a href="/health">Trạng thái model ↗</a></div>
-</section>
-<section><h2>Kết nối từ bot</h2>
-<p>Gửi file vào <code>POST /transcribe</code> dưới dạng <code>multipart/form-data</code>, trường <code>file</code>. Kết quả trả về là file MIDI.</p>
-<pre id="example"></pre>
-<p class="note">WAV, MP3, FLAC, OGG, M4A · Tối đa 10 MB / 30 giây · Một yêu cầu xử lý mỗi lần. CPU có thể mất vài phút.</p>
 </section>
 <p class="note">Đây là link môi trường phát triển, không phải hosting 24/7. API thử nghiệm không yêu cầu xác thực: không dùng cho dữ liệu nhạy cảm. File âm thanh chỉ được xử lý tạm thời và xóa sau khi hoàn tất; không tạo link lưu trữ công khai.</p>
 </main>
 <script>
-const input = document.getElementById('service-url');
-if (!input.value) input.value = window.location.origin;
-document.getElementById('example').textContent = 'curl -X POST "' + input.value + '/transcribe" \\\n  -F "file=@piano.wav" \\\n  --output transcription.mid';
-document.getElementById('copy').addEventListener('click', async () => {
-  const message = document.getElementById('message');
-  try { await navigator.clipboard.writeText(input.value); message.textContent = 'Đã sao chép link dịch vụ.'; }
-  catch {
-    input.focus(); input.select();
-    const copied = document.execCommand('copy');
-    message.textContent = copied ? 'Đã sao chép link dịch vụ.' : 'Hãy nhấn Ctrl+C hoặc Cmd+C để sao chép link đã chọn.';
-  }
+const drop=document.getElementById('drop'),fileInput=document.getElementById('file-input'),fileName=document.getElementById('file-name'),convertBtn=document.getElementById('convert'),status=document.getElementById('status'),downloadLink=document.getElementById('download');
+let selectedFile=null;
+drop.addEventListener('click',()=>fileInput.click());
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0])selectFile(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',()=>{if(fileInput.files[0])selectFile(fileInput.files[0])});
+function selectFile(f){const ok=['.wav','.mp3','.flac','.ogg','.m4a'].some(e=>f.name.toLowerCase().endsWith(e));if(!ok){status.textContent='❌ Chỉ hỗ trợ WAV, MP3, FLAC, OGG, M4A';status.className='error';return}if(f.size>10*1024*1024){status.textContent='❌ File quá lớn, tối đa 10 MB';status.className='error';return}selectedFile=f;fileName.textContent='📎 '+f.name+' ('+(f.size/1024/1024).toFixed(1)+' MB)';convertBtn.disabled=false;status.textContent='';status.className='';downloadLink.style.display='none'}
+convertBtn.addEventListener('click',async()=>{
+if(!selectedFile)return;
+convertBtn.disabled=true;status.className='processing';status.innerHTML='<span class="spinner"></span>Đang xử lý... Vui lòng đợi.';downloadLink.style.display='none';
+const formData=new FormData();formData.append('file',selectedFile);
+try{
+const res=await fetch('/transcribe',{method:'POST',body:formData});
+if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('Lỗi '+res.status+(t?' — '+t:''))}
+const blob=await res.blob();const url=URL.createObjectURL(blob);
+downloadLink.href=url;downloadLink.style.display='inline-block';
+status.className='done';status.textContent='✅ Xong! Bấm nút bên dưới để tải MIDI.';
+}catch(e){status.className='error';status.textContent='❌ '+e.message}finally{convertBtn.disabled=false}
+});
+const input=document.getElementById('service-url');
+if(!input.value)input.value=window.location.origin;
+document.getElementById('copy').addEventListener('click',async()=>{
+const m=document.getElementById('message');
+try{await navigator.clipboard.writeText(input.value);m.textContent='Đã sao chép link dịch vụ.'}
+catch{input.focus();input.select();const c=document.execCommand('copy');m.textContent=c?'Đã sao chép link dịch vụ.':'Hãy nhấn Ctrl+C hoặc Cmd+C để sao chép.'}
 });
 </script>
 </body></html>

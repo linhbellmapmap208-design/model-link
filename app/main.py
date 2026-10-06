@@ -26,7 +26,7 @@ inference_lock = threading.Lock()
 
 @asynccontextmanager
 async def lifespan(app):
-    torch.set_num_threads(2)
+    torch.set_num_threads(os.cpu_count() or 4)
     package = resources.files('transkun')
     conf_manager = moduleconf.parseFromFile(str(package / 'pretrained/2.0.conf'))
     model_class = conf_manager['Model'].module.TransKun
@@ -71,8 +71,8 @@ def transcribe_audio(data: bytes, suffix: str) -> bytes:
                 audio = AudioSegment.from_file(audio_path).set_sample_width(2)
             except Exception as exc:
                 raise HTTPException(422, 'Không đọc được file âm thanh.') from exc
-            if len(audio) == 0 or len(audio) > 30000:
-                raise HTTPException(422, 'Âm thanh phải dài từ hơn 0 đến 30 giây trong bản thử nghiệm CPU.')
+            if len(audio) == 0 or len(audio) > 2400000:
+                raise HTTPException(422, 'Âm thanh phải dài từ hơn 0 đến 40 phút.')
             samples = np.asarray(audio.get_array_of_samples(), dtype=np.float32).reshape(-1, audio.channels) / 32768.0
             model = app.state.model
             if audio.frame_rate != model.fs:
@@ -93,11 +93,11 @@ async def transcribe(file: UploadFile = File(...)):
         await file.close()
         raise HTTPException(422, 'Hỗ trợ WAV, MP3, FLAC, OGG hoặc M4A.')
     try:
-        data = await file.read(10 * 1024 * 1024 + 1)
+        data = await file.read(200 * 1024 * 1024 + 1)
     finally:
         await file.close()
-    if not data or len(data) > 10 * 1024 * 1024:
-        raise HTTPException(413, 'File phải nhỏ hơn hoặc bằng 10 MB và không được rỗng.')
+    if not data or len(data) > 200 * 1024 * 1024:
+        raise HTTPException(413, 'File phải nhỏ hơn hoặc bằng 200 MB và không được rỗng.')
     try:
         midi = await asyncio.to_thread(transcribe_audio, data, suffix)
     except HTTPException:

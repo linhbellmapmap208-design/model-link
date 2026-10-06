@@ -15,7 +15,7 @@
 <h2>Tải file lên</h2>
 <div class="drop" id="drop">
 <p>📁 Kéo th file vào đây hoặc bấm để chọn</p>
-<p class="note">WAV · MP3 · FLAC · OGG · M4A — tối đa 10 MB / 30 giây</p>
+<p class="note">WAV · MP3 · FLAC · OGG · M4A — tối đa 200 MB / 40 phút</p>
 <input type="file" id="file-input" accept=".wav,.mp3,.flac,.ogg,.m4a" hidden>
 </div>
 <p class="file-name" id="file-name"></p>
@@ -38,7 +38,7 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0])selectFile(e.dataTransfer.files[0])});
 fileInput.addEventListener('change',()=>{if(fileInput.files[0])selectFile(fileInput.files[0])});
-function selectFile(f){const ok=['.wav','.mp3','.flac','.ogg','.m4a'].some(e=>f.name.toLowerCase().endsWith(e));if(!ok){status.textContent='❌ Chỉ hỗ trợ WAV, MP3, FLAC, OGG, M4A';status.className='error';return}if(f.size>10*1024*1024){status.textContent='❌ File quá lớn, tối đa 10 MB';status.className='error';return}selectedFile=f;fileName.textContent='📎 '+f.name+' ('+(f.size/1024/1024).toFixed(1)+' MB)';convertBtn.disabled=false;status.textContent='';status.className='';downloadLink.style.display='none'}
+function selectFile(f){const ok=['.wav','.mp3','.flac','.ogg','.m4a'].some(e=>f.name.toLowerCase().endsWith(e));if(!ok){status.textContent='❌ Chỉ hỗ trợ WAV, MP3, FLAC, OGG, M4A';status.className='error';return}if(f.size>200*1024*1024){status.textContent='❌ File quá lớn, tối đa 200 MB';status.className='error';return}selectedFile=f;fileName.textContent='📎 '+f.name+' ('+(f.size/1024/1024).toFixed(1)+' MB)';convertBtn.disabled=false;status.textContent='';status.className='';downloadLink.style.display='none'}
 convertBtn.addEventListener('click',async()=>{
 if(!selectedFile)return;
 convertBtn.disabled=true;status.className='processing';status.innerHTML='<span class="spinner"></span>Đang xử lý... Vui lòng đợi.';downloadLink.style.display='none';

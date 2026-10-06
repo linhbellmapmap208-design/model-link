@@ -12,7 +12,7 @@ services:
     environment:
       BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX}
       PYTHONUNBUFFERED: "1"
-      OMP_NUM_THREADS: "2"
+      OMP_NUM_THREADS: "4"
       WATCHFILES_FORCE_POLLING: "true"
     command:
       - sh

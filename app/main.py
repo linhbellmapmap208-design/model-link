@@ -16,6 +16,7 @@ from pydub import AudioSegment
 import soxr
 import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from transkun.Data import writeMidi
 
@@ -39,6 +40,12 @@ async def lifespan(app):
 
 
 app = FastAPI(title='TransKun Piano to MIDI', lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 
 @app.get('/', response_class=HTMLResponse)

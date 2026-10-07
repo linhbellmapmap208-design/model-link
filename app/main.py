@@ -19,7 +19,9 @@ import torch._inductor.config as inductor_config
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
+from pydantic import BaseModel
 from transkun.Data import writeMidi
+import yt_dlp
 
 # Optimize torch inductor for CPU code generation
 inductor_config.cpp_wrapper = True
@@ -97,6 +99,63 @@ def transcribe_audio(data: bytes, suffix: str) -> bytes:
             return output.getvalue()
     finally:
         inference_lock.release()
+
+
+class URLRequest(BaseModel):
+    url: str
+
+
+def download_audio(url: str) -> tuple[bytes, str]:
+    """Download audio from a URL (SoundCloud, etc.) using yt-dlp. Returns (data, suffix)."""
+    with tempfile.TemporaryDirectory(prefix='ytdl-') as directory:
+        outtmpl = str(Path(directory) / 'audio.%(ext)s')
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': outtmpl,
+            'noplaylist': True,
+            'quiet': True,
+            'no_warnings': True,
+            'extractaudio': True,
+            'audioformat': 'mp3',
+        }
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+        except yt_dlp.utils.DownloadError as exc:
+            raise HTTPException(422, f'Không tải được audio từ link: {exc}') from exc
+        downloaded = Path(ydl.prepare_filename(info))
+        if not downloaded.exists():
+            # yt-dlp may change extension when extracting audio
+            candidates = list(Path(directory).glob('audio.*'))
+            if not candidates:
+                raise HTTPException(500, 'Tải audio xong nhưng không tìm thấy file.')
+            downloaded = candidates[0]
+        data = downloaded.read_bytes()
+        if len(data) > 200 * 1024 * 1024:
+            raise HTTPException(413, 'Audio quá lớn, tối đa 200 MB.')
+        return data, downloaded.suffix.lower()
+
+
+@app.post('/transcribe-url', responses={200: {'content': {'audio/midi': {}}}})
+async def transcribe_url(request: URLRequest):
+    url = request.url.strip()
+    if not url.startswith(('http://', 'https://')):
+        raise HTTPException(422, 'Link không hợp lệ. Cần bắt đầu bằng http:// hoặc https://')
+    try:
+        data, suffix = await asyncio.to_thread(download_audio, url)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception('Audio download failed')
+        raise HTTPException(500, 'Không tải được audio từ link.') from exc
+    try:
+        midi = await asyncio.to_thread(transcribe_audio, data, suffix)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception('Transcription failed')
+        raise HTTPException(500, 'Không chuyển đổi được âm thanh. Kiểm tra log dịch vụ.') from exc
+    return Response(midi, media_type='audio/midi', headers={'Content-Disposition': 'attachment; filename="transcription.mid"'})
 
 
 @app.post('/transcribe', responses={200: {'content': {'audio/midi': {}}}})

@@ -23,6 +23,12 @@
 <div id="status"></div>
 <a id="download" class="button download-btn" style="display:none" download="transcription.mid">⬇ Tải MIDI về</a>
 </section>
+<section>
+<h2>SoundCloud → MIDI</h2>
+<div class="row"><input type="text" id="sc-url" placeholder="Dán link SoundCloud vào đây..." aria-label="Link SoundCloud"><button id="sc-convert" type="button">Transcribe</button></div>
+<div id="sc-status"></div>
+<a id="sc-download" class="button download-btn" style="display:none" download="transcription.mid">⬇ Tải MIDI về</a>
+</section>
 <section><h2>Link dịch vụ</h2>
 <div class="row"><input type="text" id="service-url" aria-label="Link dịch vụ" readonly value="__PUBLIC_URL__"><button id="copy" type="button">Sao chép link</button></div>
 <p id="message" role="status" aria-live="polite"></p>
@@ -50,6 +56,18 @@ const blob=await res.blob();const url=URL.createObjectURL(blob);
 downloadLink.href=url;downloadLink.style.display='inline-block';
 status.className='done';status.textContent='✅ Xong! Bấm nút bên dưới để tải MIDI.';
 }catch(e){status.className='error';status.textContent='❌ '+e.message}finally{convertBtn.disabled=false}
+});
+const scUrl=document.getElementById('sc-url'),scConvert=document.getElementById('sc-convert'),scStatus=document.getElementById('sc-status'),scDownload=document.getElementById('sc-download');
+scConvert.addEventListener('click',async()=>{
+const url=scUrl.value.trim();if(!url){scStatus.textContent='❌ Vui lòng dán link SoundCloud';scStatus.className='error';return}
+scConvert.disabled=true;scStatus.className='processing';scStatus.innerHTML='<span class="spinner"></span>Đang tải audio và chuyển đổi... Vui lòng đợi.';scDownload.style.display='none';
+try{
+const res=await fetch('/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('Lỗi '+res.status+(t?' — '+t:''))}
+const blob=await res.blob();const u=URL.createObjectURL(blob);
+scDownload.href=u;scDownload.style.display='inline-block';
+scStatus.className='done';scStatus.textContent='✅ Xong! Bấm nút bên dưới để tải MIDI.';
+}catch(e){scStatus.className='error';scStatus.textContent='❌ '+e.message}finally{scConvert.disabled=false}
 });
 const input=document.getElementById('service-url');
 if(!input.value)input.value=window.location.origin;

@@ -13,12 +13,13 @@ services:
       BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX}
       PYTHONUNBUFFERED: "1"
       OMP_NUM_THREADS: "4"
+      TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS: "1"
       WATCHFILES_FORCE_POLLING: "true"
     command:
       - sh
       - -ec
       - |
-        apt-get update && apt-get install -y --no-install-recommends ffmpeg sox libsndfile1 libgomp1
+        apt-get update && apt-get install -y --no-install-recommends ffmpeg sox libsndfile1 libgomp1 g++
         test -x /opt/venv/bin/python || python -m venv /opt/venv
         /opt/venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.base44.txt -c requirements.base44.lock.txt
         exec /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload --reload-dir /workspace/app

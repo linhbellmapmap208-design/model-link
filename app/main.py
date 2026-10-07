@@ -15,10 +15,15 @@ import numpy as np
 from pydub import AudioSegment
 import soxr
 import torch
+import torch._inductor.config as inductor_config
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from transkun.Data import writeMidi
+
+# Optimize torch inductor for CPU code generation
+inductor_config.cpp_wrapper = True
+inductor_config.coordinate_descent_tuning = True
 
 logger = logging.getLogger(__name__)
 inference_lock = threading.Lock()
@@ -34,8 +39,16 @@ async def lifespan(app):
     checkpoint = torch.load(str(package / 'pretrained/2.0.pt'), map_location='cpu', weights_only=False)
     model.load_state_dict(checkpoint.get('best_state_dict', checkpoint.get('state_dict')), strict=False)
     model.eval()
+    # Disable gradient checkpointing (only needed for training, adds overhead for inference)
+    model.backbone.useGradientCheckpoint = False
+    # Compile the bottleneck function for optimized CPU code generation
+    model.processFramesBatch = torch.compile(model.processFramesBatch, mode='max-autotune')
+    # Warm up the compiled model with a tiny dummy input so the first real request is fast
+    dummy = torch.from_numpy(np.zeros((model.fs, 1), dtype=np.float32))
+    with torch.inference_mode():
+        model.transcribe(dummy, discardSecondHalf=False)
     app.state.model = model
-    logger.info('TransKun %s loaded on CPU', version('transkun'))
+    logger.info('TransKun %s loaded on CPU (compiled, %d threads)', version('transkun'), torch.get_num_threads())
     yield
 
 
@@ -57,7 +70,7 @@ def home():
 
 @app.get('/health')
 def health():
-    return {'status': 'ready', 'model': 'TransKun', 'version': version('transkun'), 'device': 'cpu'}
+    return {'status': 'ready', 'model': 'TransKun', 'version': version('transkun'), 'device': 'cpu', 'optimized': 'torch.compile + 4 cores'}
 
 
 def transcribe_audio(data: bytes, suffix: str) -> bytes:

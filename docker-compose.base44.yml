@@ -15,6 +15,8 @@ services:
       OMP_NUM_THREADS: "4"
       TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS: "1"
       WATCHFILES_FORCE_POLLING: "true"
+    env_file:
+      - /run/base44/app.env
     command:
       - sh
       - -ec

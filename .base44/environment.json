@@ -2,5 +2,12 @@
   "previewPort": 3000,
   "healthPath": "/health",
   "startCommand": "docker compose -f docker-compose.base44.yml up -d",
-  "secrets": []
+  "secrets": [
+    {
+      "name": "TRANSKUN_API_KEY",
+      "description": "API key for TransKun /transcribe and /transcribe-url endpoints. Used by Vercel frontend to authenticate requests. Set this to any string you choose, then use the same value in the X-API-Key header on your Vercel frontend.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    }
+  ]
 }

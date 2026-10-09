@@ -16,7 +16,7 @@ from pydub import AudioSegment
 import soxr
 import torch
 import torch._inductor.config as inductor_config
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
@@ -29,6 +29,15 @@ inductor_config.coordinate_descent_tuning = True
 
 logger = logging.getLogger(__name__)
 inference_lock = threading.Lock()
+API_KEY = os.getenv('TRANSKUN_API_KEY', '')
+
+
+def require_api_key(x_api_key: str = Header(default='')):
+    if not API_KEY:
+        return  # no key configured — open access (dev mode)
+    if x_api_key != API_KEY:
+        raise HTTPException(401, 'API key không hợp lệ. Gửi header X-API-Key.')
+    return x_api_key
 
 
 @asynccontextmanager
@@ -137,7 +146,7 @@ def download_audio(url: str) -> tuple[bytes, str]:
 
 
 @app.post('/transcribe-url', responses={200: {'content': {'audio/midi': {}}}})
-async def transcribe_url(request: URLRequest):
+async def transcribe_url(request: URLRequest, _api_key: str = Depends(require_api_key)):
     url = request.url.strip()
     if not url.startswith(('http://', 'https://')):
         raise HTTPException(422, 'Link không hợp lệ. Cần bắt đầu bằng http:// hoặc https://')
@@ -159,7 +168,7 @@ async def transcribe_url(request: URLRequest):
 
 
 @app.post('/transcribe', responses={200: {'content': {'audio/midi': {}}}})
-async def transcribe(file: UploadFile = File(...)):
+async def transcribe(file: UploadFile = File(...), _api_key: str = Depends(require_api_key)):
     suffix = Path(file.filename or '').suffix.lower()
     if suffix not in {'.wav', '.mp3', '.flac', '.ogg', '.m4a'}:
         await file.close()

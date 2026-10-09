@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import asynccontextmanager
-from html import escape
 from importlib import resources
 from importlib.metadata import version
 import io
@@ -65,9 +64,7 @@ app.add_middleware(
 
 @app.get('/', response_class=HTMLResponse)
 def home():
-    suffix = os.getenv('BASE44_PUBLIC_HOST_SUFFIX', '')
-    public_url = f'https://3000-{suffix}' if suffix else ''
-    return Path(__file__).with_name('index.html').read_text().replace('__PUBLIC_URL__', escape(public_url, quote=True))
+    return Path(__file__).with_name('index.html').read_text()
 
 
 @app.get('/health')

@@ -29,9 +29,7 @@
 <div id="sc-status"></div>
 <a id="sc-download" class="button download-btn" style="display:none" download="transcription.mid">⬇ Tải MIDI về</a>
 </section>
-<section><h2>Link dịch vụ</h2>
-<div class="row"><input type="text" id="service-url" aria-label="Link dịch vụ" readonly value="__PUBLIC_URL__"><button id="copy" type="button">Sao chép link</button></div>
-<p id="message" role="status" aria-live="polite"></p>
+<section>
 <div class="links"><a href="/docs">Tài liệu & thử API ↗</a><a href="/health">Trạng thái model ↗</a></div>
 </section>
 <p class="note">Đây là link môi trường phát triển, không phải hosting 24/7. API thử nghiệm không yêu cầu xác thực: không dùng cho dữ liệu nhạy cảm. File âm thanh chỉ được xử lý tạm thời và xóa sau khi hoàn tất; không tạo link lưu trữ công khai.</p>
@@ -68,13 +66,6 @@ const blob=await res.blob();const u=URL.createObjectURL(blob);
 scDownload.href=u;scDownload.style.display='inline-block';
 scStatus.className='done';scStatus.textContent='✅ Xong! Bấm nút bên dưới để tải MIDI.';
 }catch(e){scStatus.className='error';scStatus.textContent='❌ '+e.message}finally{scConvert.disabled=false}
-});
-const input=document.getElementById('service-url');
-if(!input.value)input.value=window.location.origin;
-document.getElementById('copy').addEventListener('click',async()=>{
-const m=document.getElementById('message');
-try{await navigator.clipboard.writeText(input.value);m.textContent='Đã sao chép link dịch vụ.'}
-catch{input.focus();input.select();const c=document.execCommand('copy');m.textContent=c?'Đã sao chép link dịch vụ.':'Hãy nhấn Ctrl+C hoặc Cmd+C để sao chép.'}
 });
 </script>
 </body></html>

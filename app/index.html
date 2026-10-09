@@ -12,11 +12,6 @@
 <h1>TransKun đang chạy.</h1>
 <p>Tải file âm thanh piano lên, model TransKun sẽ chuyển thành MIDI. Đã tối ưu tốc độ CPU với torch.compile + 4 core.</p>
 <section>
-<h2>API Key</h2>
-<div class="row"><input type="text" id="api-key" placeholder="Dán API key vào đây..." aria-label="API Key"><button id="save-key" type="button">Lưu</button></div>
-<p id="key-msg" class="note" style="margin:8px 0 0;color:#65d8b0"></p>
-</section>
-<section>
 <h2>Tải file lên</h2>
 <div class="drop" id="drop">
 <p>📁 Kéo th file vào đây hoặc bấm để chọn</p>
@@ -42,10 +37,6 @@
 <p class="note">Đây là link môi trường phát triển, không phải hosting 24/7. API thử nghiệm không yêu cầu xác thực: không dùng cho dữ liệu nhạy cảm. File âm thanh chỉ được xử lý tạm thời và xóa sau khi hoàn tất; không tạo link lưu trữ công khai.</p>
 </main>
 <script>
-const apiKeyInput=document.getElementById('api-key'),saveKeyBtn=document.getElementById('save-key'),keyMsg=document.getElementById('key-msg');
-let apiKey=localStorage.getItem('transkun_api_key')||'';
-if(apiKey)apiKeyInput.value=apiKey;
-saveKeyBtn.addEventListener('click',()=>{apiKey=apiKeyInput.value.trim();localStorage.setItem('transkun_api_key',apiKey);keyMsg.textContent='Đã lưu API key.'});
 const drop=document.getElementById('drop'),fileInput=document.getElementById('file-input'),fileName=document.getElementById('file-name'),convertBtn=document.getElementById('convert'),status=document.getElementById('status'),downloadLink=document.getElementById('download');
 let selectedFile=null;
 drop.addEventListener('click',()=>fileInput.click());
@@ -59,7 +50,7 @@ if(!selectedFile)return;
 convertBtn.disabled=true;status.className='processing';status.innerHTML='<span class="spinner"></span>Đang xử lý... Vui lòng đợi.';downloadLink.style.display='none';
 const formData=new FormData();formData.append('file',selectedFile);
 try{
-const res=await fetch('/transcribe',{method:'POST',body:formData,headers:{'X-API-Key':apiKey}});
+const res=await fetch('/transcribe',{method:'POST',body:formData});
 if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('Lỗi '+res.status+(t?' — '+t:''))}
 const blob=await res.blob();const url=URL.createObjectURL(blob);
 downloadLink.href=url;downloadLink.style.display='inline-block';
@@ -71,7 +62,7 @@ scConvert.addEventListener('click',async()=>{
 const url=scUrl.value.trim();if(!url){scStatus.textContent='❌ Vui lòng dán link SoundCloud';scStatus.className='error';return}
 scConvert.disabled=true;scStatus.className='processing';scStatus.innerHTML='<span class="spinner"></span>Đang tải audio và chuyển đổi... Vui lòng đợi.';scDownload.style.display='none';
 try{
-const res=await fetch('/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({url})});
+const res=await fetch('/transcribe-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
 if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('Lỗi '+res.status+(t?' — '+t:''))}
 const blob=await res.blob();const u=URL.createObjectURL(blob);
 scDownload.href=u;scDownload.style.display='inline-block';

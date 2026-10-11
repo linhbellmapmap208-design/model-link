@@ -8,3 +8,6 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.2
 python-multipart==0.0.20
 yt-dlp
+onnx==1.23.2
+onnxruntime==1.31.0
+onnxscript==0.7.2

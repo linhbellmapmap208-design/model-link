@@ -19,7 +19,7 @@ services:
       - sh
       - -ec
       - |
-        apt-get update && apt-get install -y --no-install-recommends ffmpeg sox libsndfile1 libgomp1 g++
+        apt-get update && apt-get install -y --no-install-recommends ffmpeg sox libsndfile1 libgomp1 g++ make
         test -x /opt/venv/bin/python || python -m venv /opt/venv
         /opt/venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.base44.txt -c requirements.base44.lock.txt
         exec /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload --reload-dir /workspace/app
